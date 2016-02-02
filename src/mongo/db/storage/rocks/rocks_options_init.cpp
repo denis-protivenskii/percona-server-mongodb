@@ -53,4 +53,11 @@ MONGO_STARTUP_OPTIONS_STORE(RocksOptions)(InitializerContext* context) {
     }
     return Status::OK();
 }
+
+MONGO_INITIALIZER_WITH_PREREQUISITES(RocksOptions_PrintOptions,
+                                     ("ServerLogRedirection"))
+(InitializerContext* context) {
+    rocksGlobalOptions.printOptions();
+    return Status::OK();
+}
 }
