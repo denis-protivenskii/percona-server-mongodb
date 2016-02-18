@@ -897,7 +897,7 @@ void RocksStandardIndex::unindex(OperationContext* txn,
 
     _indexStorageSize.fetch_sub(static_cast<long long>(prefixedKey.size()),
                                 std::memory_order_relaxed);
-    ru->writeBatch()->Delete(prefixedKey);
+    ru->writeBatch()->SingleDelete(prefixedKey);
 }
 
 SortedDataInterface::Cursor* RocksStandardIndex::newCursor(OperationContext* txn,
