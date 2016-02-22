@@ -904,6 +904,9 @@ void RocksStandardIndex::unindex(OperationContext* txn,
 
     _indexStorageSize.fetch_sub(static_cast<long long>(prefixedKey.size()),
                                 std::memory_order_relaxed);
+    bool check;
+    auto s = _db->ExperimentalAssertICanSingleDeleteThisKey(prefixedKey, &check);
+    invariant(s.ok() && check);
     ru->writeBatch()->SingleDelete(prefixedKey);
 }
 
