@@ -88,10 +88,10 @@ string dupKeyError(const BSONObj& key) {
 
 const int kTempKeyMaxSize = 1024;  // Do the same as the heap implementation
 
-Status checkKeySize(const BSONObj& key) {
+Status checkKeySize(const BSONObj& key, const char* op) {
     if (key.objsize() >= kTempKeyMaxSize) {
         string msg = mongoutils::str::stream()
-            << "RocksIndex::insert: key too large to index, failing " << ' ' << key.objsize() << ' '
+            << "RocksIndex::" << op << ": key too large to index, failing  " << key.objsize() << ' '
             << key;
         return Status(ErrorCodes::KeyTooLong, msg);
     }
@@ -516,7 +516,7 @@ public:
         : _prefix(std::move(prefix)), _ordering(ordering), _txn(txn), _dupsAllowed(dupsAllowed) {}
 
     Status addKey(const BSONObj& newKey, const RecordId& loc) {
-        Status s = checkKeySize(newKey);
+        Status s = checkKeySize(newKey, "bulkAdd");
         if (!s.isOK()) {
             return s;
         }
@@ -658,7 +658,7 @@ Status RocksUniqueIndex::insert(OperationContext* txn,
                                 const BSONObj& key,
                                 const RecordId& loc,
                                 bool dupsAllowed) {
-    Status s = checkKeySize(key);
+    Status s = checkKeySize(key, "insert");
     if (!s.isOK()) {
         return s;
     }
@@ -733,7 +733,7 @@ void RocksUniqueIndex::unindex(OperationContext* txn,
                                const BSONObj& key,
                                const RecordId& loc,
                                bool dupsAllowed) {
-    if (!checkKeySize(key).isOK()) {
+    if (!checkKeySize(key, "unindex").isOK()) {
         return;
     }
 
@@ -859,7 +859,7 @@ Status RocksStandardIndex::insert(OperationContext* txn,
                                   const RecordId& loc,
                                   bool dupsAllowed) {
     invariant(dupsAllowed);
-    Status s = checkKeySize(key);
+    Status s = checkKeySize(key, "insert");
     if (!s.isOK()) {
         return s;
     }
@@ -890,7 +890,7 @@ void RocksStandardIndex::unindex(OperationContext* txn,
                                  const RecordId& loc,
                                  bool dupsAllowed) {
     invariant(dupsAllowed);
-    if (!checkKeySize(key).isOK()) {
+    if (!checkKeySize(key, "unindex").isOK()) {
         return;
     }
 
