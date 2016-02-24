@@ -733,6 +733,10 @@ void RocksUniqueIndex::unindex(OperationContext* txn,
                                const BSONObj& key,
                                const RecordId& loc,
                                bool dupsAllowed) {
+    if (!checkKeySize(key).isOK()) {
+        return;
+    }
+
     KeyString encodedKey(key, _order);
     std::string prefixedKey(_makePrefixedKey(_prefix, encodedKey));
 
@@ -886,6 +890,9 @@ void RocksStandardIndex::unindex(OperationContext* txn,
                                  const RecordId& loc,
                                  bool dupsAllowed) {
     invariant(dupsAllowed);
+    if (!checkKeySize(key).isOK()) {
+        return;
+    }
 
     KeyString encodedKey(key, _order, loc);
     std::string prefixedKey(_makePrefixedKey(_prefix, encodedKey));
