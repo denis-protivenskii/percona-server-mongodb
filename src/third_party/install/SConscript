@@ -1,44 +1,89 @@
 Import("env")
 Import("rocksdb")
+Import("debugBuild optBuild")
 
 # InjectThirdPartyIncludePaths in a hard way
 env.PrependUnique(CPPPATH=['#/src/third_party/install/include'])
 env.PrependUnique(LIBPATH=['#/src/third_party/install/lib'])
 
+num_jobs = env.GetOption('num_jobs')
 rocks_dir = '#/src/third_party/rocksdb/'
 install_lib = 'lib/'
 rocks_lib_l = 'rocksdb'
+rocks_libname = '' # Will be set later
+build_marker_prefix = '.mongobuild'
+build_marker_suffix = '' # Will be set later
 
 def CheckClean(env):
     if env.GetOption('clean'):
         env.Execute(Action(clean_rocksdb))
 
+def marker_suffix_for_build_mode():
+    # Dirty hack to build libs in different modes with different names
+    marker_suffix = ''
+    if debugBuild:
+        marker_suffix = '_optdebug' if optBuild else '_debug'
+    return marker_suffix
+
+def debug_level_for_build_mode():
+    # By default, use release target
+    debug_level = 0
+    if debugBuild:
+        debug_level = 1 if optBuild else 2
+    return 'DEBUG_LEVEL=' + str(debug_level)
+
 def make_rocksdb_with(make_part):
     import subprocess
 
     build_dir = Dir(rocks_dir).get_abspath()
+    # LIBNAME is needed as debug builds have different name by default
+    libname = 'LIBNAME=' + rocks_libname
     p = subprocess.Popen(
-            ['make', 'INSTALL_PATH=../install', 'DEBUG_LEVEL=0'] + make_part,
+            ['make', 'INSTALL_PATH=../install', debug_level_for_build_mode(), libname]
+            + make_part,
             cwd=build_dir)
     return p.wait()
 
 def clean_rocksdb(target, source, env):
+    full_clean_rocksdb()
+
+def full_clean_rocksdb():
     return make_rocksdb_with(['clean', 'uninstall'])
 
-def build_rocksdb_once(target, source, env):
-    return make_rocksdb_with(['-j' + str(env.GetOption('num_jobs')), 'install-static'])
+def build_rocksdb_once():
+    return make_rocksdb_with(['-j' + str(num_jobs), 'static_lib', 'install'])
+
+def check_build_mode():
+    # Another dirty hack that allows building RocksDB in the proper build mode.
+    # This is needed because RocksDB puts all objects internally to the same
+    # folder and doesn't use two-phase build, so it's insensitive to build
+    # options' changes.
+    import glob, os, os.path
+    marker_file_prefix = File(rocks_dir + build_marker_prefix).get_abspath()
+    marker_file = marker_file_prefix + build_marker_suffix
+    marker_file_wildcard = marker_file_prefix + '*'
+    if not os.path.exists(marker_file):
+        # Create new marker file
+        map(os.remove, glob.glob(marker_file_wildcard))
+        with open(marker_file, 'w+'):
+            pass
+        # Do full clean to remove old object files
+        full_clean_rocksdb()
 
 def build_rocksdb(target, source, env):
-    retcode = build_rocksdb_once(target, source, env)
+    check_build_mode()
+    retcode = build_rocksdb_once()
     # RocksDB engine fails to build incrementally, clean-rebuild it in this case
     if retcode != 0:
-        clean_rocksdb(target, source, env)
-        retcode = build_rocksdb_once(target, source, env)
+        full_clean_rocksdb()
+        retcode = build_rocksdb_once()
     return retcode
 
 if rocksdb:
     # Always build (make) RocksDB engine
-    rocks_target = install_lib + env['LIBPREFIX'] + rocks_lib_l + env['LIBSUFFIX']
+    build_marker_suffix = marker_suffix_for_build_mode()
+    rocks_libname = env['LIBPREFIX'] + rocks_lib_l
+    rocks_target = install_lib + rocks_libname + env['LIBSUFFIX']
     env.Command(
         target=rocks_target,
         source=[],
@@ -60,8 +105,11 @@ if rocksdb:
             install_lib + rocks_lib_l,
         ])
 
-installEnv.Library(
+shim_target = installEnv.Library(
     target="shim_install",
     source=[
         'shim_install.cpp'
     ])
+
+if rocksdb:
+    installEnv.Depends(shim_target, rocks_target)
