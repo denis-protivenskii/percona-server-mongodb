@@ -1,4 +1,4 @@
-// test that createColleciton gets audited
+// test that shutdownServer gets audited
 
 if (TestData.testData !== undefined) {
     load(TestData.testData + '/audit/_audit_helpers.js');
@@ -6,13 +6,15 @@ if (TestData.testData !== undefined) {
     load('jstests/audit/_audit_helpers.js');
 }
 
+var testDBName = 'audit_shutdown';
+
 auditTest(
     'shutdown',
     function(m, restartServer) {
         m.getDB('admin').shutdownServer();
         m = restartServer();
 
-        auditColl = getAuditEventsCollection(m);
+        auditColl = getAuditEventsCollection(m, testDBName);
         assert.eq(1, auditColl.count({
             atype: "shutdown",
             // Give 10 seconds of slack in case shutdown / restart was particularly slow

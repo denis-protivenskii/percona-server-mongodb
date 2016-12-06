@@ -20,7 +20,7 @@ auditTest(
         assert.commandWorked(testDB.createCollection(oldName));
         assert.commandWorked(testDB.getCollection(oldName).renameCollection(newName));
 
-        var auditColl = getAuditEventsCollection(m);
+        var auditColl = getAuditEventsCollection(m, testDBName);
         var checkAuditLogForSingleRename = function() {
             assert.eq(1, auditColl.count({
                 atype: "renameCollection",

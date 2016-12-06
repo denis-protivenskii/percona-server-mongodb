@@ -17,7 +17,7 @@ auditTest(
         assert.writeOK(coll.insert({ a: 17 }));
         assert(coll.drop());
 
-        var auditColl = getAuditEventsCollection(m);
+        var auditColl = getAuditEventsCollection(m, testDBName);
         assert.eq(1, auditColl.count({
             atype: "dropCollection",
             ts: withinTheLastFewSeconds(),

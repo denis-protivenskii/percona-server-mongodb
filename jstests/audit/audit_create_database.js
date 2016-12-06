@@ -15,7 +15,7 @@ auditTest(
         assert.commandWorked(testDB.dropDatabase());
         assert.commandWorked(testDB.createCollection('foo'));
 
-        auditColl = getAuditEventsCollection(m);
+        auditColl = getAuditEventsCollection(m, testDBName);
         assert.eq(1, auditColl.count({
             atype: "createDatabase",
             ts: withinTheLastFewSeconds(),

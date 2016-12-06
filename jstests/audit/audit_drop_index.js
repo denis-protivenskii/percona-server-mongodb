@@ -18,7 +18,7 @@ auditTest(
         assert.commandWorked(coll.createIndex({ a: 1 }, { name: idxName }));
         assert.commandWorked(coll.dropIndex({ a: 1 }));
 
-        var auditColl = getAuditEventsCollection(m);
+        var auditColl = getAuditEventsCollection(m, testDBName);
         assert.eq(1, auditColl.count({
             atype: "dropIndex",
             ts: withinTheLastFewSeconds(),

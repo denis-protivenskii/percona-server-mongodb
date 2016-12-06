@@ -6,13 +6,15 @@ if (TestData.testData !== undefined) {
     load('jstests/audit/_audit_helpers.js');
 }
 
+var testDBName = 'audit_log_application_message';
+
 auditTest(
     'logApplicationMessage',
     function(m) {
         var msg = "it's a trap!"
         assert.commandWorked(m.getDB('admin').runCommand({ logApplicationMessage: msg }));
 
-        auditColl = getAuditEventsCollection(m);
+        auditColl = getAuditEventsCollection(m, testDBName);
         assert.eq(1, auditColl.count({
             atype: "applicationMessage",
             ts: withinTheLastFewSeconds(),

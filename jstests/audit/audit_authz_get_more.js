@@ -52,7 +52,7 @@ auditTest(
         testDB.logout();
 
         // Verify that audit event was inserted.
-        auditColl = getAuditEventsCollection(m, undefined, true);
+        auditColl = getAuditEventsCollection(m, testDBName, undefined, true);
         assert.eq(1, auditColl.count({
             atype: "authCheck",
             ts: withinTheLastFewSeconds(),

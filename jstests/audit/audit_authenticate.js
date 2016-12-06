@@ -25,7 +25,7 @@ auditTest(
 
         assert(testDB.auth('john', 'john'), "could not auth as john (pwd john)");
 
-        var auditColl = getAuditEventsCollection(m, undefined, true);
+        var auditColl = getAuditEventsCollection(m, testDBName, undefined, true);
         assert.eq(1, auditColl.count({
             atype: 'authenticate',
             ts: withinTheLastFewSeconds(),
@@ -40,7 +40,7 @@ auditTest(
         // ErrorCodes::AuthenticationFailed in src/mongo/base/error_codes.err
         var authenticationFailureCode = 18;
 
-        var auditColl = getAuditEventsCollection(m, undefined, true);
+        var auditColl = getAuditEventsCollection(m, testDBName, undefined, true);
         assert.eq(1, auditColl.count({
             atype: 'authenticate',
             ts: withinTheLastFewSeconds(),
