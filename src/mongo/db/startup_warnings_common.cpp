@@ -81,6 +81,8 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
         log() << "**          Read and write access to data and configuration is "
                  "unrestricted."
               << startupWarningsLog;
+        log() << "**          Please run psmdb_enable_auth.sh as an administrator."
+              << startupWarningsLog;
         warned = true;
     }
 
